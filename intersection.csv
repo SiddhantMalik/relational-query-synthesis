@@ -1,0 +1,11 @@
+Street1,Street2,Crash
+William St,Liberty St,0
+Broadway,Liberty St,0
+Whitehall,Broadway,1
+Broadway,Whitehall,1
+Liberty St,Broadway,0
+Liberty St,William St,0
+Wall St,Broadway,0
+Broadway,Wall St,0
+Wall St,William St,0
+William St,Wall St,0
