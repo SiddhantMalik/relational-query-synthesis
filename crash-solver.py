@@ -64,6 +64,14 @@ def find_expressions_for_truth_table(truth_table):
         if all_match:
             yield expr
 
+def format_expression(expr):
+    if isinstance(expr, tuple):
+        # Recursively process the tuple and join elements with spaces
+        return f"({format_expression(expr[0])} {expr[1]} {format_expression(expr[2])})"
+    else:
+        # Return the string representation for non-tuple elements
+        return str(expr)
+
 results = list(find_expressions_for_truth_table(truth_table))
 for r in results:
-    print(r)
+    print(format_expression(r))
