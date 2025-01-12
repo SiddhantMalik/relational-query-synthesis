@@ -1,14 +1,11 @@
 from z3 import *
 import pandas as pd
-import itertools
-from sympy import symbols, Or, And, Not 
-from sympy.logic.boolalg import to_dnf, simplify_logic
+import operator
 
 # Reading the data
 crashes = {(row['Street1'], row['Street2']): row['Crash'] for index, row in pd.read_csv('intersection.csv').iterrows()}
 street_details = {row['Street']: [row['HasTraffic'], row['GreenSignal']] for index, row in pd.read_csv('street.csv').iterrows()}
-solver = Solver()
-x, y = String("a"), String("b")
+
 
 truth_table = []
 
@@ -23,23 +20,50 @@ for (street1, street2), crash in crashes.items():
         crash
     ])
 
-# print(truth_table)
 
-def truth_table_to_boolean(truth_table):
-    A, B, C, D = symbols('street1-greensignal street1-hastraffic street2-greensignal street2-hastraffic')
-    terms = []
+#commented the ops because earlier it was giving many possible equations
+ops = {
+    'AND': operator.and_,
+    'OR': operator.or_,
+    # 'XOR': operator.xor,
+    # 'NAND': lambda a, b: not operator.and_(a, b),
+    # 'NOR':  lambda a, b: not operator.or_(a, b)
+}
 
-    for row in truth_table:
-        if row[-1] == 1:  # Considering only the rows where the output is 1
-            term = []
-            term.append(A if row[0] == 1 else Not(A))
-            term.append(B if row[1] == 1 else Not(B))
-            term.append(C if row[2] == 1 else Not(C))
-            term.append(D if row[3] == 1 else Not(D))
-            terms.append(And(*term))
-    
-    boolean_expression = Or(*terms)
-    simplified_expression = simplify_logic(boolean_expression, form='dnf')
-    return simplified_expression
+def eval_expr(expr, vals):
+    """Evaluate the expression"""
+    if isinstance(expr, str):
+        return vals[expr]
+    if len(expr) == 3:
+        left, op, right = expr
+        return ops[op](eval_expr(left, vals), eval_expr(right, vals))
+    return expr  # single literal or bool
 
-print(truth_table_to_boolean(truth_table))
+def generate_expressions(vars):
+    """Yield all possible boolean expressions over given vars."""
+    if len(vars) == 1:
+        yield vars[0]
+    else:
+        for i in range(1, len(vars)):
+            for left_expr in generate_expressions(vars[:i]):
+                for right_expr in generate_expressions(vars[i:]):
+                    for op in ops.keys():
+                        yield (left_expr, op, right_expr)
+
+def find_expressions_for_truth_table(truth_table):
+    var_count = len(truth_table[0]) - 1
+    variables = [chr(ord('A') + i) for i in range(var_count)]
+    # Validate expressions
+    for expr in generate_expressions(variables):
+        all_match = True
+        for row in truth_table:
+            vals = dict(zip(variables, row[:var_count]))
+            if eval_expr(expr, vals) != row[-1]:
+                all_match = False
+                break
+        if all_match:
+            yield expr
+
+results = list(find_expressions_for_truth_table(truth_table))
+for r in results:
+    print(r)
