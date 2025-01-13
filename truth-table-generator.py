@@ -17,7 +17,6 @@ def print_truth_table(table, variables):
     for row in table:
         print(' | '.join(map(str, row)))
 
-# Example usage
 expression = input("Enter a boolean expression: ")
 variables = input("Enter the variables separated by commas: ").split(',')
 truth_table = generate_truth_table(expression, variables)
